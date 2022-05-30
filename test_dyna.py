@@ -20,6 +20,10 @@ trainset = torchvision.datasets.CIFAR100(root='./data', train=False,
                                         download=True, transform=transform)
 dataset = torch.utils.data.DataLoader(trainset, batch_size=1,
                                         shuffle=False, num_workers=0, drop_last=True)
+A = trainset.class_to_idx
+B= trainset.targets
+print('A: ',A)
+#print(B)
 dataset_size = len(dataset)
 print('#test images = %d' % dataset_size)
 
@@ -30,51 +34,49 @@ model.setup(opt)               # regular setup: load and print networks; create 
 model.eval()
 
 PSNR_list = []
-SSIM_list = []
 N_channel_list = []
-count_list = [[]]*10
-PSNR_class_list = [[]]*10
+count_list = [[]]*100
+PSNR_class_list = [[]]*100
 
 for i, data in enumerate(dataset):
-    if i >= opt.num_test:  # only apply our model to opt.num_test images.
-        break
-    start_time = time.time()
-    input = data[0]
-    model.set_input(input.repeat(opt.num_test_channel, 1, 1, 1))
-    model.forward()
-    fake = model.fake
-    hard_mask = model.hard_mask
+    if data[1]==0:   # label
+        if i >= opt.num_test:  # only apply our model to opt.num_test images.
+            break
+        start_time = time.time()
+        input = data[0]
+        model.set_input(input.repeat(opt.num_test_channel, 1, 1, 1))
+        model.forward()
+        fake = model.fake
+        hard_mask = model.hard_mask
 
-    N_channel_list.append(hard_mask[0].sum().item())
-    count_list[data[1].item()].append(hard_mask[0].sum().item())
+        N_channel_list.append(hard_mask[0].sum().item())
+        count_list[data[1].item()].append(hard_mask[0].sum().item())
 
-    # Get the int8 generated images
-    img_gen_numpy = fake.detach().cpu().float().numpy()
-    img_gen_numpy = (np.transpose(img_gen_numpy, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
-    img_gen_int8 = img_gen_numpy.astype(np.uint8)
+        # Get the int8 generated images
+        img_gen_numpy = fake.detach().cpu().float().numpy()
+        img_gen_numpy = (np.transpose(img_gen_numpy, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
+        img_gen_int8 = img_gen_numpy.astype(np.uint8)
 
-    origin_numpy = input.detach().cpu().float().numpy()
-    origin_numpy = (np.transpose(origin_numpy, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
-    origin_int8 = origin_numpy.astype(np.uint8)
+        origin_numpy = input.detach().cpu().float().numpy()
+        origin_numpy = (np.transpose(origin_numpy, (0, 2, 3, 1)) + 1) / 2.0 * 255.0
+        origin_int8 = origin_numpy.astype(np.uint8)
 
-    diff = np.mean((np.float64(img_gen_int8) - np.float64(origin_int8))**2, (1, 2, 3))
+        diff = np.mean((np.float64(img_gen_int8) - np.float64(origin_int8))**2, (1, 2, 3))
 
-    PSNR = 10 * np.log10((255**2) / diff)
-    PSNR_list.append(np.mean(PSNR))
+        PSNR = 10 * np.log10((255**2) / diff)
+        PSNR_list.append(np.mean(PSNR))
 
-    PSNR_class_list[data[1].item()].append(PSNR)
+        PSNR_class_list[data[1].item()].append(PSNR)
 
-    if i % 100 == 0:
-        print(i)
+        if i % 100 == 0:
+            print(i)
 
-counts = [np.mean(count_list[i]) for i in range(10)]
-PSNRs = [np.mean(np.hstack(PSNR_class_list[i])) for i in range(10)]
-
+counts = [np.mean(count_list[i]) for i in range(100)]
+PSNRs = [np.mean(np.hstack(PSNR_class_list[i])) for i in range(100)]
 CPP_channel = np.mean(N_channel_list)/16
 CPP_Gtilde = np.mean(N_channel_list)*128/(2*32*32)
 Features = np.mean(N_channel_list)-4
 print(f'Mean PSNR: {np.mean(PSNR_list):.3f}')
-print(f'Mean SSIM: {np.mean(SSIM_list):.3f}')
 print(f'Mean Channel: {np.mean(N_channel_list):.3f}')
 print('Mean CPP_channel: ', CPP_channel)
 print('Mean CPP_Gtilde: ', CPP_Gtilde)
