@@ -39,6 +39,7 @@ count_list = [[]]*100
 PSNR_class_list = [[]]*100
 
 for i, data in enumerate(dataset):
+  if data[1]==22 or data[1]==39 or data[1]==40 or data[1]==86 or data[1]==87:
     if data[1]==0:   # label
         if i >= opt.num_test:  # only apply our model to opt.num_test images.
             break
@@ -81,5 +82,3 @@ print(f'Mean Channel: {np.mean(N_channel_list):.3f}')
 print('Mean CPP_channel: ', CPP_channel)
 print('Mean CPP_Gtilde: ', CPP_Gtilde)
 print('Mean selectable features:', Features)
-print(f"Counts: {*counts,}")
-print(f"PSNRs: {*PSNRs,}")
