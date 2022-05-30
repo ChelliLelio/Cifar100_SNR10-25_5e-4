@@ -8,9 +8,6 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 
-import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
-
 # Extract the options
 opt = TrainOptions().parse()
 
