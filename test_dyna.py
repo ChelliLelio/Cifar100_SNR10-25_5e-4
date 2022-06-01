@@ -41,8 +41,6 @@ count_list = [[]]*100
 PSNR_class_list = [[]]*100
 
 for i, data in enumerate(dataset):
-  if data[1]==22 or data[1]==39 or data[1]==40 or data[1]==86 or data[1]==87:
-    if data[1]==0:   # label
         if i >= opt.num_test:  # only apply our model to opt.num_test images.
             break
         start_time = time.time()
